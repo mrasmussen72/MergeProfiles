@@ -1,19 +1,30 @@
-﻿[CmdletBinding()]
+﻿# MergeProfiles
+
+[CmdletBinding()]
 Param(
-[string] $FolderNamesToDetermineProfile,
-[string] $sourceFolderPath,
-[string] $LogFilePath,
-[string] $UsersFolder,
-[boolean] $CopyPublicProfile
+    [Parameter(Mandatory=$false,
+    HelpMessage='Source folder path that will be searched for profiles')]
+    [string] $sourceFolderPath,
+    [Parameter(Mandatory=$false,
+    HelpMessage='Location of log files')]
+    [string] $LogFilePath,
+    [Parameter(Mandatory=$false,
+    HelpMessage='Location of user folder.  Typically this is c:\Users')]
+    [string] $UsersFolderPath,
+    [Parameter(Mandatory=$false,
+    HelpMessage='Do we want to copy the public profile')]
+    [boolean] $CopyPublicProfile
 )
+
+#Used for logging
+$stringBuilder = New-Object System.Text.StringBuilder
 
 #Source folder will be something like dBackup
 $RootDirectory = "c:\"
 $sourceFolderPath = "c:\dBackup"
-$userFolder = "c:\Users"
+$userFolderPath = "c:\Users"
 
-$stringBuilder = New-Object System.Text.StringBuilder
-$TestProfileList = $FolderNamesToDetermineProfile.Split(',')
+
 $LogFilePath = "c:\Windows\CCM\Logs\CopyStuff.log"
 $CopyPublicProfile = $true
 
@@ -48,7 +59,7 @@ function Get-FileNameAndPathFromString
     )
     $returnObject = [PSCustomObject]@{
     FileName = ""
-    Path = ""
+    DirectoryPath = ""
     }
 
     [int]$lastIndexOfBSlash = $DirectoryWithFilename.LastIndexOf('\')
@@ -112,7 +123,7 @@ function Copy-Profile
             {
                 Write-Logging -message "Directory doesn't exist, copying entire tree.."
                 #copy the entire directory, no worries
-                $returnCode = Robocopy $sourcePathObject $destinationPathObject /zb /copyall /move
+                $returnCode = Robocopy $sourcePathObject $destinationPathObject /zb /copyall /move /e
                 Write-Logging -message $returnCode
                 Write-Logging -message "Copy completed" 
             }
@@ -262,29 +273,37 @@ Write-Logging -message "Start of script***********************"
 
 #log starting variable state
 
-Write-Logging -message "Log file path = $($LogFilePath)"
-Write-Logging -message "Copy public profile = $($CopyPublicProfile)"
-Write-Logging -message "Source folder path = $($sourceFolderPath)"
-Write-Logging -message "user folder = $($userFolder)"
-
-$DirectoriesInSourceFolder = dir -Directory -Path $sourceFolderPath
-
-foreach($dir in $DirectoriesInSourceFolder)
+try
 {
-    $fullPath = $dir.FullName
-    Write-Logging "Checking if $($dir) is a profile..."
 
-    if((Is-Profile -Folder $fullPath))
-    {
-        Write-Logging "$($dir) is a profile, running copy"
-        #found profile, merge
-        Copy-Profile -sourcePath "$fullPath" -destinationPath "$($userFolder)\$($dir.Name)"
-    }
-    else
-    {
-        Write-Logging "$($dir) is not a profile, skipping"
-    }
+    Write-Logging -message "Log file path = $($LogFilePath)"
+    Write-Logging -message "Copy public profile = $($CopyPublicProfile)"
+    Write-Logging -message "Source folder path = $($sourceFolderPath)"
+    Write-Logging -message "user folder = $($userFolder)"
 
+    $DirectoriesInSourceFolder = dir -Directory -Path $sourceFolderPath
+
+    foreach($dir in $DirectoriesInSourceFolder)
+    {
+        $fullPath = $dir.FullName
+        Write-Logging "Checking if $($dir) is a profile..."
+
+        if((Is-Profile -Folder $fullPath))
+        {
+            Write-Logging "$($dir) is a profile, running copy"
+            #found profile, merge
+            Copy-Profile -sourcePath "$fullPath" -destinationPath "$($userFolderPath)\$($dir.Name)"
+        }
+        else
+        {
+            Write-Logging "$($dir) is not a profile, skipping"
+        }
+
+    }
+}
+Catch
+{
+    Write-Logging -message "Exception caught, message = " + $_.Exception.ToString()
 }
 
 Write-Logging -message "End of script***********************"

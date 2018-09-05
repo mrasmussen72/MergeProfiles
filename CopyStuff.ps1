@@ -1,4 +1,5 @@
 ﻿# MergeProfiles
+#Merge profiles from one directory to another
 
 [CmdletBinding()]
 Param(

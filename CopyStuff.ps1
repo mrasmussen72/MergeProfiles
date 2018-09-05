@@ -147,7 +147,7 @@ function Copy-Profile
                 
                 $DestinationfileNameAndDirectory = Get-FileNameAndPathFromString -DirectoryWithFilename $destinationPathObject
                 $SourceFileNameAndDirectory = Get-FileNameAndPathFromString -DirectoryWithFilename $sourcePathObject
-                $returnCode = Robocopy $SourceFileNameAndDirectory.DirectoryPath $destinationPathObject.DirectoryPath $SourceFileNameAndDirectory.FileName /zb /copyall /mov
+                $returnCode = Robocopy $SourceFileNameAndDirectory.DirectoryPath $DestinationfileNameAndDirectory.DirectoryPath $SourceFileNameAndDirectory.FileName /zb /copyall /mov
                 Write-Logging -message $returnCode
                 Write-Logging -message "Copying file completed"
             }

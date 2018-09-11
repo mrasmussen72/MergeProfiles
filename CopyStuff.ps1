@@ -29,28 +29,6 @@ $userFolderPath = "c:\Users"
 $LogFilePath = "c:\Windows\CCM\Logs\CopyStuff.log"
 $CopyPublicProfile = $true
 
-
-function Copy-Stuff
-{
-    [CmdletBinding()]
-    Param(
-       [Parameter(Mandatory=$True)]
-       [string]$Source,
-       [Parameter(Mandatory=$True)]
-       [String]$Destination
-    )
-
-    $Error.Clear()
-    $Dt = Get-Date
-    New-Item -ItemType file -Path $LogFilePath -Force
-    "Starting sync process for: $Source folder at $Dt" | Out-File $LogFilePath -Append
-    xcopy $Source $Destination /c /s /e /r /h /d /y /x
-    $Dt = Get-Date
-    "Incremental sync process for: $Source folder has completed at $Dt The following errors occurred:" | Out-File $LogFilePath -Append
-    " " | Out-File $LogFilePath -Append
-    "$Error" | Out-File $LogFilePath -Append
-}
-
 function Get-FileNameAndPathFromString
 {
     Param
@@ -94,15 +72,16 @@ function Copy-Profile
     
     if(-not(Test-Path($SourcePath)))
     {
-        throw "Source path of $($SourcePath) doesn't exist, throwing error"
+        throw "Source path of $($SourcePath) doesn't exist"
 
     }
     
     #gets all objects in source location
     $fileSystemObjects = Get-ChildItem -Path $sourcePath -Recurse -Filter "*.*"
-    #$fileSystemObjects.Length
     foreach($fileSystemObject in $fileSystemObjects)
     {  
+        $numObjects = $fileSystemObjects.Length
+        Write-Logging -message "Number of objects to migrate from $($SourcePath) = $($numObjects)"
         $sourcePathObject = $fileSystemObject.FullName  
         $destinationPathObject = $fileSystemObject.FullName.Replace($sourcePath, $destinationPath)
         if(-not (Test-Path $sourcePathObject))
@@ -144,12 +123,21 @@ function Copy-Profile
             {
                 Write-Logging -message "File does not exist, moving file to destination"
                 # just copy it
-                
                 $DestinationfileNameAndDirectory = Get-FileNameAndPathFromString -DirectoryWithFilename $destinationPathObject
                 $SourceFileNameAndDirectory = Get-FileNameAndPathFromString -DirectoryWithFilename $sourcePathObject
-                $returnCode = Robocopy $SourceFileNameAndDirectory.DirectoryPath $DestinationfileNameAndDirectory.DirectoryPath $SourceFileNameAndDirectory.FileName /zb /copyall /mov
-                Write-Logging -message $returnCode
-                Write-Logging -message "Copying file completed"
+                Write-Logging -message "Copying..." 
+                Write-logging -message "`t Source = $($SourceFileNameAndDirectory.Directory)" + "\" + "$($SourceFileNameAndDirectory.FileName)"
+                Write-logging -message "`t  Destination = $($DestinationfileNameAndDirectory.Directory)" + "\" + "$($DestinationfileNameAndDirectory.FileName)"
+                if(Test-Path -Path "")
+                {
+                    $returnCode = Robocopy $SourceFileNameAndDirectory.DirectoryPath $DestinationfileNameAndDirectory.DirectoryPath $SourceFileNameAndDirectory.FileName /zb /copyall /mov
+                    Write-Logging -message $returnCode
+                    Write-Logging -message "Copying file completed"
+                }
+                else
+                {
+                    Write-Logging -message "File didn't exist in source, skipping..."
+                }
             }
             else
             {
@@ -267,6 +255,37 @@ function Write-Logging($message)
 	$null = $stringBuilder.AppendLine( $message)
     $stringBuilder.ToString() | Out-File -FilePath $LogFilePath -Append
     $stringBuilder.Clear()
+}
+
+function Delete-Empties($path)
+{
+    $items = Get-ChildItem -Path $path
+    [long]$numOfObjects = $items.Length
+    
+    foreach($item in $items)
+    {
+        $sourcePathObject = $item.FullName
+        if((Get-Item $sourcePathObject) -is [System.IO.DirectoryInfo])
+        {
+            [long]$objsInDir = (Get-ChildItem -Path $sourcePathObject).Length
+            if($objsInDir -eq 0)
+            {
+                Remove-Item -Path $sourcePathObject
+            }
+            else
+            {
+                Delete-Empties -path $sourcePathObject
+            }
+
+        }
+    }
+    if($numOfObjects -ne 0)
+    {
+    }
+    else
+    {
+        Remove-Item -Path $path
+    }
 }
 
 

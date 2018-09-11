@@ -8,7 +8,7 @@
         $sourcePathObject = $item.FullName
         if((Get-Item $sourcePathObject) -is [System.IO.DirectoryInfo])
         {
-            [long]$objsInDir = (Get-ChildItem -Path $sourcePathObject).Length
+            [long]$objsInDir = (Get-ChildItem -Path $sourcePathObject -Recurse -Filter "*.*").Length
             if($objsInDir -eq 0)
             {
                 Remove-Item -Path $sourcePathObject

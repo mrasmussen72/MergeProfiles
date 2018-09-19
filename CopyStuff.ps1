@@ -29,6 +29,33 @@ $userFolderPath = "c:\Users"
 $LogFilePath = "c:\Windows\CCM\Logs\CopyStuff.log"
 $CopyPublicProfile = $true
 
+function Write-Favorties
+{
+        Param
+    (
+        [Parameter(Mandatory=$true)]
+        [string] $ProfileName,
+        [Parameter(Mandatory=$true)]
+        [string] $FavoriteSource
+
+    )
+    # %USERPROFILE%\appdata\local\packages\Microsoft.MicrosoftEdge_8wekyb3d8bbwe\AC\MicrosoftEdge\User\Default\Favorites
+    # the above path does exist, we need to create that path for each profile and dump in the favories
+
+    if(-not(Test-Path -Path $FavoriteSource))
+    {
+        throw "Favorite source doesn't exist, unable to copy favorites.  Favorite source = $($FavoriteSource)"
+    }
+
+    if(-not(Test-Path -Path "c:\Users\$($ProfileName)"))
+    {
+        throw "User path should exist, doesn't exist, exiting.  User path = c:\Users\$($ProfileName)"
+    }
+
+
+
+}
+
 function Get-FileNameAndPathFromString
 {
     Param
@@ -176,6 +203,16 @@ function Copy-Profile
             }
         }  
     }
+
+    try
+    {
+        
+    }
+    catch
+    {
+        Write-Logging -message "Error caught in copying favorites.  Favorites only exist in %USERPROFILE%\Favorities\ which won't work for MS Edge.  Manually move the favorites to remedy the issue"
+    }
+
     Write-Logging -message "Copy profile completed"
 }
 

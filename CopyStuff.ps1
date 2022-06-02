@@ -24,7 +24,7 @@ $stringBuilder = New-Object System.Text.StringBuilder
 $RootDirectory = "c:\"
 $sourceFolderPath = "c:\dBackup"
 $userFolderPath = "c:\Users"
-
+$temnp = "hello"
 
 $LogFilePath = "c:\Windows\CCM\Logs\CopyStuff.log"
 $CopyPublicProfile = $true
